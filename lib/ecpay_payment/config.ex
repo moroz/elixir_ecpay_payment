@@ -20,7 +20,13 @@ defmodule ECPayPayment.Config do
 
     case Map.fetch(all, profile_name) do
       {:ok, settings} ->
-        Map.get(settings, type)
+        case Map.get(settings, type) do
+          %{development: true} = raw ->
+            Map.put(raw, :host, "https://payment-stage.ecpay.com.tw")
+
+          %{development: false} = raw ->
+            Map.put(raw, :host, "https://payment.ecpay.com.tw")
+        end
 
       _ ->
         all_keys = Map.keys(all) |> Enum.join(", ")
@@ -34,19 +40,12 @@ defmodule ECPayPayment.Config do
 
   def get_hash_iv(profile_name, type), do: Map.get(get_config(profile_name, type), :hash_iv)
   def get_hash_key(profile_name, type), do: Map.get(get_config(profile_name, type), :hash_key)
-  def development?(profile_name), do: Map.get(get_config(profile_name), :development)
+  def development?(profile_name, type), do: Map.get(get_config(profile_name, type), :development)
+
+  def get_merchant_id(profile_name, type),
+    do: Map.get(get_config(profile_name, type), :merchant_id)
 
   def get_key_and_iv(profile, type) do
     {get_hash_key(profile, type), get_hash_iv(profile, type)}
-  end
-
-  def get_merchant_id(profile_name), do: Map.get(get_config(profile_name) || %{}, :merchant_id)
-
-  def get_endpoint(path, profile) do
-    if development?(profile) do
-      "https://payment-stage.ecpay.com.tw" <> path
-    else
-      "https://payment.ecpay.com.tw" <> path
-    end
   end
 end
