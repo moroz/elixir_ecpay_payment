@@ -9,15 +9,11 @@ defmodule ECPayPayment.Members.BackgroundCheckout do
     :card_id
   ])
 
+  alias ECPayPayment.Timestamps
+
   defimpl ECPayPayment.Payload.Serializable do
     def endpoint(_data) do
       "/MerchantMember/AuthCardID/V2"
-    end
-
-    defp format_timestamp(time) do
-      (time || Timex.now())
-      |> Timex.Timezone.convert("Asia/Taipei")
-      |> Timex.format!("%Y/%m/%d %H:%M:%S", :strftime)
     end
 
     def to_map(data, %{merchant_id: merchant_id}) do
@@ -25,7 +21,7 @@ defmodule ECPayPayment.Members.BackgroundCheckout do
         MerchantID: merchant_id,
         MerchantMemberID: "#{merchant_id}#{data.customer_id}",
         MerchantTradeNo: data.merchant_trade_no,
-        MerchantTradeDate: format_timestamp(data.merchant_trade_date),
+        MerchantTradeDate: Timestamps.format_timestamp(data.merchant_trade_date),
         TotalAmount: floor(data.total_amount),
         TradeDesc: data.description,
         CardID: data.card_id,
