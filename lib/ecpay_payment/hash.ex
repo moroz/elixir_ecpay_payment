@@ -13,14 +13,19 @@ defmodule ECPayPayment.Hash do
     |> hash()
   end
 
-  def verify(%{"CheckMacValue" => checksum} = params, profile, type) do
-    case calculate(params, profile, type) == checksum do
+  def verify(%{"CheckMacValue" => checksum} = params, config) do
+    case calculate(params, config) == checksum do
       true ->
         :ok
 
       false ->
         {:error, :checksum}
     end
+  end
+
+  def verify(params, profile_name, type) do
+    config = Config.get_config(profile_name, type)
+    verify(params, config)
   end
 
   def uri_escape(string) do
