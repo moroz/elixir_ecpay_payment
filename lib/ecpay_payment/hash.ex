@@ -1,9 +1,14 @@
 defmodule ECPayPayment.Hash do
   alias ECPayPayment.Config
 
-  def calculate(params, profile, type) when is_map(params) do
+  def calculate(params, profile_name, type) when is_map(params) do
+    config = Config.get_config(profile_name, type)
+    calculate(params, config)
+  end
+
+  def calculate(params, config) when is_map(params) do
     params
-    |> encode_map_as_query(profile, type)
+    |> encode_map_as_query(config)
     |> uri_escape()
     |> hash()
   end
@@ -26,6 +31,7 @@ defmodule ECPayPayment.Hash do
     |> String.replace("%2a", "*")
     |> String.replace("%28", "(")
     |> String.replace("%29", ")")
+    |> String.replace("%20", "+")
     |> String.replace("%40", "%2540")
     |> String.replace("%257c", "%7c")
   end
@@ -40,22 +46,24 @@ defmodule ECPayPayment.Hash do
     "#{key}=#{val}"
   end
 
-  def forbidden_values do
-    ~w[CheckMacValue HashKey HashIV]
-  end
+  @forbidden ~w[CheckMacValue HashKey HashIV]
 
-  @spec encode_map_as_query(map(), profile :: atom(), type :: atom()) :: binary()
-  def encode_map_as_query(map, profile, type) when is_map(map) do
-    {hash_key, hash_iv} = hash_values(map, profile, type)
-
-    forbidden = forbidden_values()
-
+  @spec encode_map_as_query(map(), config :: map()) :: binary()
+  def encode_map_as_query(map, %{hash_iv: hash_iv, hash_key: hash_key}) when is_map(map) do
     query_str =
-      Enum.filter(map, fn {k, v} -> !is_nil(v) && to_string(k) not in forbidden end)
+      Enum.filter(map, fn {k, v} -> !is_nil(v) && to_string(k) not in @forbidden end)
+      |> Enum.sort_by(fn {k, _v} -> String.downcase(to_string(k)) end)
       |> Enum.map(fn pair -> encode_pair(pair) end)
       |> Enum.join("&")
 
     "HashKey=#{hash_key}&" <> query_str <> "&HashIV=#{hash_iv}"
+  end
+
+  @spec encode_map_as_query(map(), profile :: atom(), type :: atom()) :: binary()
+  def encode_map_as_query(map, profile_name, type) when is_map(map) do
+    config = Config.get_config(profile_name, type)
+
+    encode_map_as_query(map, config)
   end
 
   defp hash(value) do

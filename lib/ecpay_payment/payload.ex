@@ -5,16 +5,34 @@ defmodule ECPayPayment.Payload do
   defprotocol Serializable do
     def to_map(data, config)
 
-    def endpoint(config)
+    def endpoint(data)
   end
 
-  def serialize(payload, profile, type) do
-    config = Config.get_config(profile, type)
+  def get_endpoint(payload, profile_name, type) do
+    config = Config.get_config(profile_name, type)
+    get_endpoint(payload, config)
+  end
 
+  def get_endpoint(payload, config) do
+    config.host <> Serializable.endpoint(payload)
+  end
+
+  def serialize(payload, profile_name, type) do
+    config = Config.get_config(profile_name, type)
+    serialize(payload, config)
+  end
+
+  def serialize(payload, config) do
     map = Serializable.to_map(payload, config)
+    checksum = Hash.calculate(map, config)
 
-    checksum = Hash.calculate(map, profile, type)
+    sorted = Enum.sort_by(map, fn {key, _val} -> String.downcase(to_string(key)) end)
 
-    Map.put(map, :CheckMacValue, checksum)
+    data =
+      for {key, val} <- sorted do
+        "#{key}=#{URI.encode(to_string(val))}&"
+      end
+
+    [data, "CheckMacValue=#{checksum}"]
   end
 end

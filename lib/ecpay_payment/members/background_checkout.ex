@@ -10,8 +10,8 @@ defmodule ECPayPayment.Members.BackgroundCheckout do
   ])
 
   defimpl ECPayPayment.Payload.Serializable do
-    def endpoint(config) do
-      "#{config.host}/MerchantMember/AuthCardID/V2"
+    def endpoint(_data) do
+      "/MerchantMember/AuthCardID/V2"
     end
 
     defp format_timestamp(time) do
