@@ -5,7 +5,7 @@ defmodule ECPayPayment.Request do
 
   def post(payload, profile_name, type) do
     config = Config.get_config(profile_name, type)
-    body = Payload.serialize(payload, config)
+    body = Payload.to_www_form(payload, config)
     endpoint = Payload.get_endpoint(payload, config)
 
     res =

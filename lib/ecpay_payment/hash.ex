@@ -28,6 +28,11 @@ defmodule ECPayPayment.Hash do
     verify(params, config)
   end
 
+  def verify(%{"MerchantID" => merchant_id} = payload) do
+    config = Config.get_config_by_merchant_id(merchant_id)
+    verify(payload, config)
+  end
+
   def uri_escape(string) do
     string
     |> URI.encode_www_form()

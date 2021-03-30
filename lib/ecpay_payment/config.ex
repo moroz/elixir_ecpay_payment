@@ -7,6 +7,23 @@ defmodule ECPayPayment.Config do
 
   def get_all_config, do: Application.get_env(:ecpay_payment, :profiles)
 
+  def get_config_by_merchant_id(merchant_id)
+      when is_binary(merchant_id) or is_integer(merchant_id) do
+    ECPayPayment.Config.get_all_config()
+    |> Map.values()
+    |> Enum.map(&Map.values/1)
+    |> List.flatten()
+    |> Enum.find(fn %{merchant_id: actual} -> to_string(actual) == to_string(merchant_id) end)
+    |> case do
+      map when is_map(map) ->
+        map
+
+      nil ->
+        raise ArgumentError,
+              "No payment configuration found for MerchantID #{merchant_id}."
+    end
+  end
+
   def get_config(profile_name \\ default_profile(), type \\ :single)
 
   def get_config(nil, type), do: get_config(default_profile(), type)

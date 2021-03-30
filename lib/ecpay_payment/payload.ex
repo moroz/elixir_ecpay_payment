@@ -17,12 +17,22 @@ defmodule ECPayPayment.Payload do
     config.host <> Serializable.endpoint(payload)
   end
 
-  def serialize(payload, profile_name, type) do
+  def to_map(payload, profile_name, type) do
     config = Config.get_config(profile_name, type)
-    serialize(payload, config)
+    to_map(payload, config)
   end
 
-  def serialize(payload, config) do
+  def to_map(payload, config) do
+    map = Serializable.to_map(payload, config)
+    Map.put(map, "CheckMacValue", Hash.calculate(map, config))
+  end
+
+  def to_www_form(payload, profile_name, type) do
+    config = Config.get_config(profile_name, type)
+    to_www_form(payload, config)
+  end
+
+  def to_www_form(payload, config) do
     map = Serializable.to_map(payload, config)
     checksum = Hash.calculate(map, config)
 
