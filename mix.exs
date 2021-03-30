@@ -37,8 +37,7 @@ defmodule EcpayPayment.MixProject do
           }
         }
       },
-      default_profile: :staging,
-      send_notifications: true
+      default_profile: :staging
     ]
   end
 

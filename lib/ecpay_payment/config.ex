@@ -35,24 +35,26 @@ defmodule ECPayPayment.Config do
   def get_config(profile_name, type) when is_atom(profile_name) and type in [:single, :multi] do
     all = get_all_config()
 
-    case Map.fetch(all, profile_name) do
-      {:ok, settings} ->
-        case Map.get(settings, type) do
-          %{development: true} = raw ->
-            Map.put(raw, :host, "https://payment-stage.ecpay.com.tw")
-
-          %{development: false} = raw ->
-            Map.put(raw, :host, "https://payment.ecpay.com.tw")
-        end
-
-      _ ->
+    case get_in(all, [profile_name, type]) do
+      nil ->
         all_keys = Map.keys(all) |> Enum.join(", ")
 
         raise ArgumentError,
-              "No payment configuration found for profile #{profile_name}. Available configuration profiles: #{
+              "No payment configuration found for profile #{profile_name} and type #{type}. Available configuration profiles: #{
                 all_keys
               }."
+
+      config ->
+        add_derived_config_properties(config)
     end
+  end
+
+  def add_derived_config_properties(%{development: true} = config) do
+    Map.put(config, :host, "https://payment-stage.ecpay.com.tw")
+  end
+
+  def add_derived_config_properties(%{development: false} = config) do
+    Map.put(config, :host, "https://payment.ecpay.com.tw")
   end
 
   def get_hash_iv(profile_name, type), do: Map.get(get_config(profile_name, type), :hash_iv)
